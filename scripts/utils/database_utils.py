@@ -5,8 +5,9 @@ from sshtunnel import SSHTunnelForwarder
 from sqlalchemy.orm import sessionmaker
 
 
-def get_oracle_connection(credentials):
-    connection_str = f"oracle+cx_oracle://{credentials['oracle_username']}:{credentials['oracle_password']}@127.0.0.1:{credentials['local_port']}/?service_name=orclpdb"
+def get_oracle_connection(credentials, ssh_tunnel):
+    local_port = str(ssh_tunnel.local_bind_port)
+    connection_str = f"oracle+cx_oracle://{credentials['oracle_username']}:{credentials['oracle_password']}@127.0.0.1:{str(local_port)}/?service_name=orclpdb"
     engine = create_engine(connection_str)
     Session = sessionmaker(bind=engine)
     session = Session()
