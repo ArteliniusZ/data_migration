@@ -7,22 +7,46 @@ from sqlalchemy import text
 
 credentials = load_credentials()
 
-# Establish Oracle SSH Tunnel
-oracle_tunnel = establish_oracle_ssh_tunnel(credentials)
-print("Oracle SSH Tunnel established.")
+try:
+    # Establish Oracle SSH Tunnel
+    oracle_tunnel = establish_oracle_ssh_tunnel(credentials)
+    print("Oracle SSH Tunnel established.")
 
-# Test Oracle Connection
-oracle_conn = get_oracle_connection(credentials, oracle_tunnel)
-print("Connected to Oracle database.")
+    # Test Oracle Connection
+    oracle_conn = get_oracle_connection(credentials, oracle_tunnel)
+    print("Connected to Oracle database.")
 
-test = oracle_conn.execute(text('select * from v$database'))
-for row in test:
-    print(row)
+    # Test Query
+    test_query = text('SELECT * FROM v$database')
+    test_result = oracle_conn.execute(test_query)
+    for row in test_result:
+        print(row)
 
-oracle_tunnel.stop()
+except Exception as e:
+    print(f"An error occurred: {str(e)}")
+
+finally:
+    # Close Oracle Connection and Stop Tunnel, regardless of success or failure
+    try:
+        if 'oracle_tunnel' in locals() and oracle_tunnel is not None:
+            oracle_tunnel.stop()
+            print("Oracle SSH Tunnel stopped.")
+    except Exception as e:
+        print(f"Error stopping Oracle SSH Tunnel: {str(e)}")
 
 
-oracle_conn.close()
+    try:
+        if 'oracle_conn' in locals() and oracle_conn is not None:
+            oracle_conn.close()
+            print("Oracle connection closed.")
+    except Exception as e:
+        print(f"Error closing Oracle connection: {str(e)}")
+
+    
+
+
+
+
 
 
 
