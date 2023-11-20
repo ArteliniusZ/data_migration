@@ -13,8 +13,9 @@ def get_oracle_connection(credentials, ssh_tunnel):
     session = Session()
     return session
 
-def get_postgres_connection(credentials):
-    connection_str = f"postgresql://{credentials['postgres_username']}:{credentials['postgres_password']}@127.0.0.1:{credentials['local_port']}/epic4_db"
+def get_postgres_connection(credentials, ssh_tunnel):
+    local_port = str(ssh_tunnel.local_bind_port)
+    connection_str = f"postgresql://{credentials['postgres_username']}:{credentials['postgres_password']}@127.0.0.1:{local_port}/epic4_db"
     engine = create_engine(connection_str)
     Session = sessionmaker(bind=engine)
     session = Session()

@@ -13,7 +13,9 @@ fake = Faker()
 def generate_fake_data(num_rows):
     try:
         ssh_tunnel = establish_oracle_ssh_tunnel(credentials)
+        print("Oracle SSH tunnel established")
         session = get_oracle_connection(credentials, ssh_tunnel)
+        print("Connected to Oracle database")
 
 
         reset_id_queries = [
@@ -282,11 +284,11 @@ if __name__ == "__main__":
 
     num_rows_to_generate = 20
 
-    #generate_fake_data(num_rows=num_rows_to_generate)
+    generate_fake_data(num_rows=num_rows_to_generate)
     #delete_fake_data(['regions', 'countries', 'locations', 'warehouses', 'employees', 'inventories', 'products', 'product_categories', 'order_items', 'orders', 'customers', 'contacts'])
 
 
-    update_values = {'region_name': 'jesus'}  # Values to be updated
-    update_conditions = {'region_id': 5}  # Conditions to identify the row(s) to be updated
+    #update_values = {'region_name': 'jesus'}  # Values to be updated
+    #update_conditions = {'region_id': 5}  # Conditions to identify the row(s) to be updated
 
-    update_tables('regions', update_values, update_conditions)
+    #update_tables('regions', update_values, update_conditions)
