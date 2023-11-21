@@ -1,6 +1,9 @@
 # utils/file_utils.py
 
 from configparser import ConfigParser
+import logging
+
+logging.basicConfig(level=logging.INFO) 
 
 def load_credentials(file_path='C:/Users/azgardan/Data_Migration_project/data_migration/config/config.ini'):
     config = ConfigParser()
@@ -24,3 +27,12 @@ def load_credentials(file_path='C:/Users/azgardan/Data_Migration_project/data_mi
         'ssh_passkey': config.get('ssh', 'ssh_passkey'),
         'local_port': config.get('ssh', 'local_port')
     }
+
+
+def save_dataframe_to_csv(dataframe, file_path, index=False):
+    try:
+        dataframe.to_csv(file_path, index=index)
+        print(f"DataFrame saved to {file_path}")
+    except Exception as e:
+        logging.error(f"Error saving DataFrame to CSV: {str(e)}")
+

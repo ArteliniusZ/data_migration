@@ -1,13 +1,14 @@
 import sys
 sys.path.append("C:/Users/azgardan/Data_Migration_project/data_migration/scripts/utils")
 from faker import Faker
+import faker_commerce
 from sqlalchemy import text
 from database_utils import get_oracle_connection, establish_oracle_ssh_tunnel
 from file_utils import load_credentials
 
 credentials = load_credentials()
 fake = Faker()
-
+fake.add_provider(faker_commerce.Provider)
 
 
 def generate_fake_data(num_rows):
@@ -36,32 +37,26 @@ def generate_fake_data(num_rows):
         for query in reset_id_queries:
             session.execute(text(query))
 
-        generated_country_codes = set()
         generated_product_id = set()
         generated_order_item_ids = set()
 
         # Insert fake data into regions table
-        for _ in range(num_rows):
-            session.execute(text("INSERT INTO regions (region_name) VALUES (:region_name)"),
-                            dict(region_name=fake.word()))
+        regions_data = [{'region_name': fake.word()} for _ in range(num_rows)]
+        session.execute(text("INSERT INTO regions (region_name) VALUES (:region_name)"), regions_data)
+        print('regions done')
 
         # Insert fake data into countries table
         for _ in range(num_rows):
-
-            country_id = None
-            while country_id is None or country_id in generated_country_codes:
-                country_id = fake.country_code()
-            
-            generated_country_codes.add(country_id)
 
             session.execute(text("""
                 INSERT INTO countries (country_id, country_name, region_id) 
                 VALUES (:country_id, :country_name, :region_id)
                 """),
-                    dict(country_id=country_id,
+                    dict(country_id=fake.country_code(),
                     country_name=fake.country(),
                     region_id=fake.random_int(min=1, max=num_rows))
                     )
+        print('countries done')
 
         # Insert fake data into locations table
         for _ in range(num_rows):
@@ -74,6 +69,7 @@ def generate_fake_data(num_rows):
                     city=fake.city(),
                     state=fake.state(),
                     country_id=fake.country_code()))
+        print('locations done')
 
         # Insert fake data into warehouses table
         for _ in range(num_rows):
@@ -83,23 +79,26 @@ def generate_fake_data(num_rows):
                 """),
                     dict(warehouse_name=fake.word(),
                         location_id=fake.random_int(min=1, max=num_rows)))
+        print('warehouses done')
             
         for _ in range(num_rows):
             session.execute(text("""INSERT INTO product_categories (category_name) 
                                 VALUES (:category_name)
                                 """),
-                                dict(category_name=fake.word()))
+                                dict(category_name=fake.ecommerce_category()))
+        print('product_categories done')
         
         for _ in range(num_rows):
             session.execute(text("""INSERT INTO products (product_name, description, standard_cost, list_price, category_id)
                                  VALUES (:product_name, :description, :standard_cost, :list_price, :category_id)
                                  """),
                                  dict(
-                                    product_name=fake.word(),
+                                    product_name=fake.ecommerce_name(),
                                     description=fake.word(),
                                     standard_cost=fake.random_int(min=10, max=50),
                                     list_price=fake.random_int(min=100, max=500),
                                     category_id=fake.random_int(min=1, max=num_rows)))
+        print('products done')
             
         for _ in range(num_rows):
 
@@ -115,6 +114,7 @@ def generate_fake_data(num_rows):
                                      product_id=product_id,
                                      warehouse_id=fake.random_int(min=1, max=num_rows),
                                      quantity=fake.random_int()))
+        print('inventories done')
 
         for _ in range(num_rows):
             order_id = None
@@ -133,6 +133,7 @@ def generate_fake_data(num_rows):
                                     product_id=fake.random_int(min=1, max=num_rows),
                                     quantity=fake.random_int(),
                                     unit_price=fake.random_int(min=100, max=500)))
+        print('order_items done')
 
         for _ in range(num_rows):
             session.execute(text("""INSERT INTO orders (customer_id, status, salesman_id, order_date)
@@ -143,6 +144,7 @@ def generate_fake_data(num_rows):
                                     status=fake.word(),
                                     salesman_id=fake.random_int(min=1, max=num_rows),
                                     order_date=fake.date_this_decade()))
+        print('orders done')
         for _ in range(num_rows):
             session.execute(text("""INSERT INTO customers (name, address, website, credit_limit)
                                  
@@ -153,6 +155,7 @@ def generate_fake_data(num_rows):
                                     address=fake.address(),
                                     website=fake.word(),
                                     credit_limit=fake.random_int(min=1000, max=5000)))
+        print('customers done')
 
         for _ in range(num_rows):
             session.execute(text("""INSERT INTO contacts (first_name, last_name, email, phone, customer_id)
@@ -165,6 +168,7 @@ def generate_fake_data(num_rows):
                                     email=fake.email(),
                                     phone=fake.phone_number(),
                                     customer_id=fake.random_int(min=1, max=num_rows)))
+        print('contacts done')
 
 
         # Insert fake data into employees table
@@ -180,6 +184,7 @@ def generate_fake_data(num_rows):
                     hire_date=fake.date_this_decade(),
                     manager_id=fake.random_int(min=1, max=num_rows),  # Assuming manager_id exists
                     job_title=fake.job()))
+        print('employees done')
 
         # Commit the changes
         session.commit()
@@ -280,15 +285,3 @@ def update_tables(table_name, set_values, conditions):
                 print(f"Error closing Oracle session: {str(e)}")
 
 
-if __name__ == "__main__":
-
-    num_rows_to_generate = 20
-
-    generate_fake_data(num_rows=num_rows_to_generate)
-    #delete_fake_data(['regions', 'countries', 'locations', 'warehouses', 'employees', 'inventories', 'products', 'product_categories', 'order_items', 'orders', 'customers', 'contacts'])
-
-
-    #update_values = {'region_name': 'jesus'}  # Values to be updated
-    #update_conditions = {'region_id': 5}  # Conditions to identify the row(s) to be updated
-
-    #update_tables('regions', update_values, update_conditions)
