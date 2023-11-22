@@ -1,10 +1,10 @@
 # utils/database_utils.py
 
-from sqlalchemy import create_engine
-from sqlalchemy import text
+from sqlalchemy import create_engine, text, select
 from sshtunnel import SSHTunnelForwarder
 from sqlalchemy.orm import sessionmaker
 import pandas as pd
+import csv
 import logging
 
 logging.basicConfig(level=logging.INFO) 
@@ -61,6 +61,9 @@ def establish_postgres_ssh_tunnel(credentials):
     except Exception as e:
         logging.error(f"Error establishing PostgreSQL SSH tunnel: {str(e)}")
 
+
+
+
 def query_to_dataframe(session, sql_script_path, parameters=None):
     
     try:
@@ -80,4 +83,48 @@ def query_to_dataframe(session, sql_script_path, parameters=None):
         return result_df
     except Exception as e:
         logging.error(f"Error creating a dataframe: {str(e)}")
+
+
+
+
+def extract_and_write_data(session, csv_file_path, table_name, unique_identifier, chunk_size=1000):    
+    try:
     
+        last_value = None
+
+        while True:
+            query = select("*").select_from(text(str(table_name))).limit(chunk_size)
+
+            if last_value:
+                query = query.where(text(f"{unique_identifier} > :last_value")).params(last_value=last_value)
+
+            data = session.execute(query)
+            rows = data.fetchall()
+
+            if not rows:
+                break
+
+            # Write data to CSV file
+            with open(csv_file_path, 'a', newline='') as csv_file:
+                csv_writer = csv.writer(csv_file)
+
+                # Write header only for the first chunk
+                if last_value is None:
+                    csv_writer.writerow(data.keys())
+
+                # Write data
+                csv_writer.writerows(rows)
+
+            last_value = rows[-1][0]  # Assuming the first column is an identifier, adjust if needed
+            
+    except Exception as e:
+        logging.error(f"Error extracting and writing data: {str(e)}")
+
+
+
+    
+
+
+
+   
+
