@@ -40,7 +40,6 @@ def generate_fake_data(num_rows):
             session.execute(text(query))
         
 
-        generated_order_item_ids = set()
         # Insert fake data into regions table
         regions_data = [{'region_name': fake.word()} for _ in range(num_rows)]
         session.execute(text("INSERT INTO regions (region_name) VALUES (:region_name)"), regions_data)

@@ -7,6 +7,8 @@ import pandas as pd
 import csv
 import logging
 
+##########################################DATABASES_CONNECTION#########################################
+
 logging.basicConfig(level=logging.INFO) 
 
 def get_oracle_connection(credentials, ssh_tunnel):
@@ -64,6 +66,7 @@ def establish_postgres_ssh_tunnel(credentials):
 
 
 
+
 def query_to_dataframe(session, sql_script_path, parameters=None):
     
     try:
@@ -83,7 +86,6 @@ def query_to_dataframe(session, sql_script_path, parameters=None):
         return result_df
     except Exception as e:
         logging.error(f"Error creating a dataframe: {str(e)}")
-
 
 
 
@@ -119,6 +121,45 @@ def extract_and_write_data(session, csv_file_path, table_name, unique_identifier
             
     except Exception as e:
         logging.error(f"Error extracting and writing data: {str(e)}")
+
+
+
+
+def load_data_to_postgres(csv_file, table_name, session):
+    try:
+
+    # Get the raw connection from the SQLAlchemy session
+        connection = session.connection().connection
+
+        # Create a temporary table to hold the CSV data
+        temp_table_name = 'temp_' + table_name
+        create_temp_table_query = f"""
+            CREATE TEMPORARY TABLE {temp_table_name} AS
+            SELECT * FROM {table_name} LIMIT 0;
+        """
+        session.execute(text(create_temp_table_query))
+
+        # Open the CSV file
+        with open(csv_file, 'r') as f:
+            # Get the column names from the CSV header
+            header = next(f)
+            columns = [col.strip() for col in header.split(',')]
+
+            # Use copy_from() method to load data into the temporary table
+            connection.cursor().copy_from(f, temp_table_name, sep=',', columns=columns)
+
+        # Insert data from temporary table into the actual table
+        insert_query = f"""
+            INSERT INTO {table_name} SELECT * FROM {temp_table_name};
+        """
+        session.execute(text(insert_query))
+
+        # Commit the transaction
+        session.commit()
+    except Exception as e:
+            logging.error(f"Error extracting and writing data: {str(e)}")
+
+
 
 
 

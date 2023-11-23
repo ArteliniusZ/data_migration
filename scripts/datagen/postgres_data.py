@@ -33,138 +33,193 @@ def generate_fake_data(num_rows):
         for query in reset_id_queries:
             session.execute(text(query))
 
-        generated_order_item_ids = set()
 
-        # Insert fake data into regions table
         regions_data = [{'region_name': fake.word()} for _ in range(num_rows)]
         session.execute(text("INSERT INTO regions (region_name) VALUES (:region_name)"), regions_data)
+        print("regions done")
 
 
         # Insert fake data into countries table
-        for _ in range(num_rows):
+        countries_data = [
+            {
+                'country_id': fake.country_code(),
+                'country_name': fake.country(),
+                'region_id': fake.random_int(min=1, max=num_rows)
+            }
+            for _ in range(num_rows)
+        ]
+        session.execute(
+            text("INSERT INTO countries (country_id, country_name, region_id) VALUES (:country_id, :country_name, :region_id)"),
+            countries_data
+        )
+        print('countries done')
 
-            
-            session.execute(text("""
-                INSERT INTO countries (country_id, country_name, region_id) 
-                VALUES (:country_id, :country_name, :region_id)
-                """),
-                    dict(country_id=fake.country_code(),
-                    country_name=fake.country(),
-                    region_id=fake.random_int(min=1, max=num_rows))
-                    )
+        locations_data = [
+            {
+                'address': fake.address(),
+                'postal_code': fake.zipcode(),
+                'city': fake.city(),
+                'state': fake.state(),
+                'country_id': fake.country_code()
+            }
+            for _ in range(num_rows)
+        ]
+        session.execute(
+            text("INSERT INTO locations (address, postal_code, city, state, country_id) VALUES (:address, :postal_code, :city, :state, :country_id)"),
+            locations_data
+        )
+        print('locations done')
 
-        # Insert fake data into locations table
-        for _ in range(num_rows):
-            session.execute(text("""
-                INSERT INTO locations (address, postal_code, city, state, country_id) 
-                VALUES (:address, :postal_code, :city, :state, :country_id)
-                """),
-                dict(address=fake.address(),
-                    postal_code=fake.zipcode(),
-                    city=fake.city(),
-                    state=fake.state(),
-                    country_id=fake.country_code()))
 
-        # Insert fake data into warehouses table
-        for _ in range(num_rows):
-            session.execute(text("""
-                INSERT INTO warehouses (warehouse_name, location_id) 
-                VALUES (:warehouse_name, :location_id)
-                """),
-                    dict(warehouse_name=fake.word(),
-                        location_id=fake.random_int(min=1, max=num_rows)))
-            
-        for _ in range(num_rows):
-            session.execute(text("""INSERT INTO product_categories (category_name) 
-                                VALUES (:category_name)
-                                """),
-                                dict(category_name=fake.ecommerce_category()))
+        warehouses_data = [
+            {
+                'warehouse_name': fake.word(),
+                'location_id': fake.random_int(min=1, max=num_rows)
+            }
+            for _ in range(num_rows)
+        ]
+        session.execute(
+            text("INSERT INTO warehouses (warehouse_name, location_id) VALUES (:warehouse_name, :location_id)"),
+            warehouses_data
+        )
+        print('warehouses done')
+
+
+      # Insert fake data into product_categories table in bulk
+        product_categories_data = [
+            {'category_name': fake.ecommerce_category()}
+            for _ in range(num_rows)
+        ]
+        session.execute(
+            text("INSERT INTO product_categories (category_name) VALUES (:category_name)"),
+            product_categories_data
+        )
+        print('product_categories done')
+
         
-        for _ in range(num_rows):
-            session.execute(text("""INSERT INTO products (product_name, description, standard_cost, list_price, category_id)
-                                 VALUES (:product_name, :description, :standard_cost, :list_price, :category_id)
-                                 """),
-                                 dict(
-                                    product_name=fake.ecommerce_name(),
-                                    description=fake.word(),
-                                    standard_cost=fake.random_int(min=10, max=100),
-                                    list_price=fake.random_int(min=100, max=500),
-                                    category_id=fake.random_int(min=1, max=num_rows)))
+        # Insert fake data into products table in bulk
+        products_data = [
+            {
+                'product_name': fake.ecommerce_name(),
+                'description': fake.word(),
+                'standard_cost': fake.random_int(min=10, max=50),
+                'list_price': fake.random_int(min=100, max=500),
+                'category_id': fake.random_int(min=1, max=num_rows)
+            }
+            for _ in range(num_rows)
+        ]
+        session.execute(
+            text("INSERT INTO products (product_name, description, standard_cost, list_price, category_id) VALUES (:product_name, :description, :standard_cost, :list_price, :category_id)"),
+            products_data
+        )
+        print('products done')
+
             
-        for _ in range(num_rows):
+        # Insert fake data into inventories table in bulk
+        inventories_data = [
+            {
+                'product_id': fake.random_int(min=1, max=num_rows),
+                'warehouse_id': fake.random_int(min=1, max=num_rows),
+                'quantity': fake.random_int()
+            }
+            for _ in range(num_rows)
+        ]
+        session.execute(
+            text("INSERT INTO inventories (product_id, warehouse_id, quantity) VALUES (:product_id, :warehouse_id, :quantity)"),
+            inventories_data
+        )
+        print('inventories done')
 
-            session.execute(text("""INSERT into inventories (product_id, warehouse_id, quantity)
-                                 VALUES (:product_id, :warehouse_id, :quantity)"""),
 
-                                 dict(
-                                     product_id=fake.unique.random_int(min=1, max=num_rows),
-                                     warehouse_id=fake.random_int(min=1, max=num_rows),
-                                     quantity=fake.random_int()))
+        # Insert fake data into order_items table in bulk
+        order_items_data = [
+    {
+        'order_id': fake.random_int(min=1, max=num_rows),
+        'item_id': fake.random_int(min=1, max=num_rows),
+        'product_id': fake.random_int(min=1, max=num_rows),
+        'quantity': fake.random_int(),
+        'unit_price': fake.random_int(min=100, max=500)
+    }
+    for _ in range(num_rows)]
+        session.execute(
+            text("INSERT INTO order_items (order_id, item_id, product_id, quantity, unit_price) VALUES (:order_id, :item_id, :product_id, :quantity, :unit_price)"),
+            order_items_data
+        )
+        print('order_items done')
 
-        for _ in range(num_rows):
-            order_id = None
-            item_id = None
-            while order_id is None or item_id is None or (order_id, item_id) in generated_order_item_ids:
-                order_id = fake.random_int(min=1, max=num_rows)
-                item_id = fake.random_int(min=1, max=num_rows)
-            
-            generated_order_item_ids.add((order_id, item_id))
-            session.execute(text("""INSERT INTO order_items (order_id, item_id, product_id, quantity, unit_price)
-                                VALUES (:order_id, :item_id, :product_id, :quantity, :unit_price)
-                                """),
-                                dict(
-                                    order_id=order_id,
-                                    item_id=item_id,
-                                    product_id=fake.random_int(min=1, max=num_rows),
-                                    quantity=fake.random_int(),
-                                    unit_price=fake.random_int(min=100, max=500)))
 
-        for _ in range(num_rows):
-            session.execute(text("""INSERT INTO orders (customer_id, status, salesman_id, order_date)
-                                 VALUES (:customer_id, :status, :salesman_id, :order_date)
-                                """),
-                                dict(
-                                    customer_id=fake.random_int(min=1, max=num_rows),
-                                    status=fake.random_element(elements=('pending', 'shipped', 'delivered')),
-                                    salesman_id=fake.random_int(min=1, max=num_rows),
-                                    order_date=fake.date_this_decade()))
-        for _ in range(num_rows):
-            session.execute(text("""INSERT INTO customers (name, address, website, credit_limit)
-                                 
-                                VALUES (:name, :address, :website, :credit_limit)
-                                """),
-                                dict(
-                                    name=fake.name(),
-                                    address=fake.address(),
-                                    website=fake.word(),
-                                    credit_limit=fake.random_int(min=1000, max=5000)))
+        # Insert fake data into orders table in bulk
+        orders_data = [
+            {
+                'customer_id': fake.random_int(min=1, max=num_rows),
+                'status': fake.word(),
+                'salesman_id': fake.random_int(min=1, max=num_rows),
+                'order_date': fake.date_this_decade()
+            }
+            for _ in range(num_rows)
+        ]
+        session.execute(
+            text("INSERT INTO orders (customer_id, status, salesman_id, order_date) VALUES (:customer_id, :status, :salesman_id, :order_date)"),
+            orders_data
+        )
+        print('orders done')
 
-        for _ in range(num_rows):
-            session.execute(text("""INSERT INTO contacts (first_name, last_name, email, phone, customer_id)
-                                 
-                                VALUES (:first_name, :last_name, :email, :phone, :customer_id)
-                                """),
-                                dict(
-                                    first_name=fake.first_name(),
-                                    last_name=fake.last_name(),
-                                    email=fake.email(),
-                                    phone=fake.phone_number(),
-                                    customer_id=fake.random_int(min=1, max=num_rows)))
+
+        # Insert fake data into customers table in bulk
+        customers_data = [
+            {
+                'name': fake.name(),
+                'address': fake.address(),
+                'website': fake.word(),
+                'credit_limit': fake.random_int(min=1000, max=5000)
+            }
+            for _ in range(num_rows)
+        ]
+        session.execute(
+            text("INSERT INTO customers (name, address, website, credit_limit) VALUES (:name, :address, :website, :credit_limit)"),
+            customers_data
+        )
+        print('customers done')
+
+
+# Insert fake data into contacts table in bulk
+        contacts_data = [
+            {
+                'first_name': fake.first_name(),
+                'last_name': fake.last_name(),
+                'email': fake.email(),
+                'phone': fake.phone_number(),
+                'customer_id': fake.random_int(min=1, max=num_rows)
+            }
+            for _ in range(num_rows)
+        ]
+        session.execute(
+            text("INSERT INTO contacts (first_name, last_name, email, phone, customer_id) VALUES (:first_name, :last_name, :email, :phone, :customer_id)"),
+            contacts_data
+        )
+        print('contacts done')
+
 
 
         # Insert fake data into employees table
-        for _ in range(num_rows):
-            session.execute(text("""
-                INSERT INTO employees (first_name, last_name, email, phone, hire_date, manager_id, job_title) 
-                VALUES (:first_name, :last_name, :email, :phone, :hire_date, :manager_id, :job_title)
-                """),
-                dict(first_name=fake.first_name(),
-                    last_name=fake.last_name(),
-                    email=fake.email(),
-                    phone=fake.phone_number(),
-                    hire_date=fake.date_this_decade(),
-                    manager_id=fake.random_int(min=1, max=num_rows),  # Assuming manager_id exists
-                    job_title=fake.job()))
+        # Insert fake data into employees table in bulk
+        employees_data = [
+            {
+                'first_name': fake.first_name(),
+                'last_name': fake.last_name(),
+                'email': fake.email(),
+                'phone': fake.phone_number(),
+                'hire_date': fake.date_this_decade(),
+                'manager_id': fake.random_int(min=1, max=num_rows),
+                'job_title': fake.job()
+            }
+            for _ in range(num_rows)
+        ]
+        session.execute(
+            text("INSERT INTO employees (first_name, last_name, email, phone, hire_date, manager_id, job_title) VALUES (:first_name, :last_name, :email, :phone, :hire_date, :manager_id, :job_title)"),
+            employees_data
+        )
+        print('employees done')
 
         # Commit the changes
         session.commit()

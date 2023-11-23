@@ -3,7 +3,6 @@
 from configparser import ConfigParser
 import logging
 import pandas as pd
-
 import boto3
 
 
@@ -33,6 +32,7 @@ def load_credentials(file_path='C:/Users/azgardan/Data_Migration_project/data_mi
     }
 
 
+
 def save_dataframe_to_csv(dataframe, file_path, index=False):
     try:
         dataframe.to_csv(file_path, index=index)
@@ -48,8 +48,10 @@ def read_aws_credentials(config_file='C:/Users/azgardan/Data_Migration_project/d
 
     aws_access_key_id = config.get('aws_credentials', 'aws_access_key_id')
     aws_secret_access_key = config.get('aws_credentials', 'aws_secret_access_key')
+    aws_region = config.get('aws_credentials', 'aws_region')
 
-    return aws_access_key_id, aws_secret_access_key
+
+    return aws_access_key_id, aws_secret_access_key, aws_region
 
 
 
@@ -72,3 +74,13 @@ def upload_to_s3(local_file_path, s3_bucket, s3_key, aws_access_key_id, aws_secr
     finally:
         # Cleanup or additional actions if needed
         pass
+
+
+def download_csv_from_s3(bucket_name, file_key, local_path, aws_access_key_id, aws_secret_access_key, aws_region):
+  
+    s3 = boto3.client('s3', aws_access_key_id=aws_access_key_id, aws_secret_access_key=aws_secret_access_key, region_name=aws_region)
+    s3.download_file(bucket_name, file_key, local_path)
+
+
+
+
